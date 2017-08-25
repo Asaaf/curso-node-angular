@@ -1,5 +1,7 @@
 'use strict';
 
+var Favorito = require('../models/favorito');
+
 function prueba(req, res) {
     var nombre = req.params.nombre;
     res.status(200).send({
@@ -9,35 +11,93 @@ function prueba(req, res) {
 }
 function getFavorito(req, res) {
     var favoritoId = req.params.id;
-    res.status(200).send({
-        getFavorito: true,
-        data: favoritoId
+    Favorito.findById(favoritoId, (err, favorito) => {
+        if (err) {
+            res.status(500).send({
+                message: "Error, no se ha podido completar la solicitud"
+            });
+        } else if (!favorito) {
+            res.status(404).send({
+                message: "No se ha encontrado ningún favorito con ese id"
+            });
+        } else {
+            res.status(200).send({
+                favorito
+            });
+        }
     });
 }
 function getFavoritos(req, res) {
-    res.status(200).send({
-       getFavoritos:true 
+    Favorito.find({}).sort('+title').exec((err, favoritos) => {
+        if (err) {
+            res.status(500).send("No se ha podido completar la solicitud");
+        } else if (!favoritos) {
+            res.status(404).send("No se han encontrado resultados");
+        } else {
+            res.status(200).send({
+                favoritos
+            });
+        }
     });
 }
 function saveFavorito(req, res) {
+    var favorito = new Favorito();
     var params = req.body;
-    res.status(200).send({
-        saveFavorito:true,
-        favorito: params
+
+    favorito.title = params.title;
+    favorito.description = params.description;
+    favorito.url = params.url;
+    favorito.save((err, favoritoStored) => {
+        if (err) {
+            res.status(500).send({
+                message: "Error al intentar guardar el favorito"
+            });
+        } else {
+            res.status(200).send({
+                message: favoritoStored
+            });
+        }
     });
 }
 function updateFavorito(req, res) {
-    var params = req.body;
-    res.status(200).send({
-        updateFavorito:true,
-        favorito: params
+    var favoritoId = req.params.id;
+    var update = req.body;
+    Favorito.findByIdAndUpdate(favoritoId, update, (err, favoritoUpdated) => {
+        if (err) {
+            res.status(500).send({
+                message: "No se ha podido completar la solicitud"
+            });
+        } else {
+            res.status(200).send({
+                favorito: favoritoUpdated
+            });
+        }
     });
 }
 function deleteFavorito(req, res) {
     var favoritoId = req.params.id;
-    res.status(200).send({
-        deleteFavorito:true,
-        data: favoritoId
+    Favorito.findById(favoritoId, (err, favorito) => {
+        if (err) {
+            res.status(500).send({
+                message: "Error, no se ha podido completar la solicitud"
+            });
+        } else if (!favorito) {
+            res.status(404).send({
+                message: "No se ha encontrado ningún favorito con ese id"
+            });
+        } else {
+            favorito.remove(err => {
+                if (err) {
+                    res.status(500).send({
+                        message: "No se ha encontrado el documento solicitado"
+                    });
+                } else {
+                    res.status(200).send({
+                        message: "Se ha eliminado correctamente el documento"
+                    });
+                }
+            });
+        }
     });
 }
 
